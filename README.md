@@ -7,18 +7,6 @@
 > **Hackathon II - The Evolution of Todo**  
 > Transforming traditional task management into an intelligent conversational experience using AI agents and MCP tools.
 
----
-
-## 👤 Developer Information
-
-**Name**: [Your Name]  
-**GitHub**: [@yourusername](https://github.com/yourusername)  
-**LinkedIn**: [Your LinkedIn](https://linkedin.com/in/yourprofile)  
-**Email**: your.email@example.com  
-**Hackathon**: Panaversity Hackathon II - Phase III  
-**Submission Date**: [Date]
-
----
 
 ## 📋 Table of Contents
 
@@ -580,11 +568,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-**Developer**: [Your Name]  
-**Email**: your.email@example.com  
-**GitHub**: [@yourusername](https://github.com/yourusername)  
-**LinkedIn**: [Your Profile](https://linkedin.com/in/yourprofile)  
-**Portfolio**: [yourwebsite.com](https://yourwebsite.com)
+- **Developer**: [LeezaSarwar]  
+- **Email**: leezasarwar0@gmail.com  
+- **GitHub**: [@LeezaSarwar](https://github.com/LeezaSarwar)  
+- **LinkedIn**: [leeza-sarwar](https://linkedin.com/in/leeza-sarwar)  
+- **Portfolio**: [LeezaSarwar](https://leezasarwar.techkl.de)
+- **X**: [LeezaSarwar](https://x.com/LeezaSarwar)
 
 ---
 
