@@ -8,25 +8,6 @@
 > Transforming traditional task management into an intelligent conversational experience using AI agents and MCP tools.
 
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Installation](#installation)
-- [Environment Setup](#environment-setup)
-- [Usage](#usage)
-- [API Documentation](#api-documentation)
-- [MCP Tools](#mcp-tools)
-- [Screenshots](#screenshots)
-- [Demo Video](#demo-video)
-- [Challenges & Solutions](#challenges--solutions)
-- [Future Enhancements](#future-enhancements)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
-
----
 
 ## 🎯 Overview
 
