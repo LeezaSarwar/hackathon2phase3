@@ -564,6 +564,6 @@ If you found this project helpful or interesting, please give it a ⭐!
 
 ---
 
-**Built with ❤️ for Panaversity Hackathon II**
+**Built with ❤️ for Panaversity Hackathon II Phase III**
 
 *Transforming task management through conversational AI* 🤖✨
