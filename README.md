@@ -9,7 +9,7 @@
 
 
 
-## 🎯 Overview
+## 🎯 Overview.
 
 Phase III introduces **conversational AI capabilities** to the Todo application, allowing users to manage their tasks through natural language interactions. Built with OpenAI's GPT-4o-mini and Model Context Protocol (MCP), the chatbot understands user intent and performs actual database operations.
 
