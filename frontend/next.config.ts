@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // output: 'export', // to enable API routes and dynamic functionality
   // Suppress hydration warnings caused by browser extensions
   onDemandEntries: {
     // Keep pages in memory for 60 seconds

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from contextlib import asynccontextmanager
 import uuid
+import asyncio
 
 from app.database import get_session
 from app.models import User
@@ -20,12 +22,14 @@ async def signup(
     session: AsyncSession = Depends(get_session),
 ):
     """Create a new user account."""
+    print(f"DEBUG: Signup attempt for {data.email}")
     # Check if email already exists
     statement = select(User).where(User.email == data.email)
     result = await session.execute(statement)
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
+        print(f"DEBUG: Email {data.email} already exists")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
@@ -44,9 +48,11 @@ async def signup(
     session.add(user)
     await session.commit()
     await session.refresh(user)
+    print(f"DEBUG: User created: {user.id}")
 
     # Create JWT token
     token = create_access_token(user.id, user.email)
+    print(f"DEBUG: Token created for {user.id}")
 
     # Set cookie
     response.set_cookie(
@@ -59,7 +65,8 @@ async def signup(
     )
 
     return AuthResponse(
-        user=UserResponse(id=user.id, email=user.email, name=user.name)
+        user=UserResponse(id=user.id, email=user.email, name=user.name),
+        token=token
     )
 
 
@@ -70,33 +77,60 @@ async def signin(
     session: AsyncSession = Depends(get_session),
 ):
     """Sign in with email and password."""
-    # Find user
-    statement = select(User).where(User.email == data.email)
-    result = await session.execute(statement)
-    user = result.scalar_one_or_none()
+    print(f"DEBUG: Signin attempt for {data.email}")
 
-    if not user or not verify_password(data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+    try:
+        # Find user
+        statement = select(User).where(User.email == data.email)
+        result = await session.execute(statement)
+        user = result.scalar_one_or_none()
+        print(f"DEBUG: User found: {user is not None}")
+
+        if not user:
+            print(f"DEBUG: User not found for {data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+
+        if not verify_password(data.password, user.password_hash):
+            print(f"DEBUG: Password verification failed for {data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+
+        print(f"DEBUG: Password verified for {data.email}")
+
+        # Create JWT token
+        token = create_access_token(user.id, user.email)
+        print(f"DEBUG: Token created for {user.id}")
+
+        # Set cookie
+        response.set_cookie(
+            key="auth_token",
+            value=token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
-    # Create JWT token
-    token = create_access_token(user.id, user.email)
-
-    # Set cookie
-    response.set_cookie(
-        key="auth_token",
-        value=token,
-        httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
-        max_age=60 * 60 * 24 * 7,  # 7 days
-    )
-
-    return AuthResponse(
-        user=UserResponse(id=user.id, email=user.email, name=user.name)
-    )
+        print(f"DEBUG: Cookie set, returning user")
+        return AuthResponse(
+            user=UserResponse(id=user.id, email=user.email, name=user.name),
+            token=token
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"DEBUG: Signin error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during signin",
+        )
 
 
 @router.post("/signout")
@@ -127,6 +161,10 @@ async def get_session_route(
             detail="User not found",
         )
 
+    # Create a fresh token for the session check
+    token = create_access_token(user.id, user.email)
+
     return AuthResponse(
-        user=UserResponse(id=user.id, email=user.email, name=user.name)
+        user=UserResponse(id=user.id, email=user.email, name=user.name),
+        token=token
     )

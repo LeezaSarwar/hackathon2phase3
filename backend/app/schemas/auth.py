@@ -21,3 +21,4 @@ class AuthResponse(BaseModel):
     """Response schema for authentication."""
 
     user: UserResponse
+    token: str

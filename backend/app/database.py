@@ -2,62 +2,37 @@ from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from typing import AsyncGenerator
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+import re
 
 from app.config import get_settings
 
-
 settings = get_settings()
 
+database_url = settings.database_url
 
-def convert_database_url(url: str) -> str:
-    """Convert database URL for asyncpg compatibility."""
-    # Replace driver
-    url = url.replace("postgresql://", "postgresql+asyncpg://")
-    url = url.replace("postgres://", "postgresql+asyncpg://")
+# Remove sslmode from URL as it's handled in connect_args for asyncpg
+if "sslmode=" in database_url:
+    database_url = re.sub(r'[?&]sslmode=[^&]+', '', database_url)
 
-    # Parse URL and remove incompatible parameters
-    parsed = urlparse(url)
-    query_params = parse_qs(parsed.query)
+if "postgresql" in database_url and "+asyncpg" not in database_url:
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://")
 
-    # Remove sslmode - we'll handle SSL via connect_args instead
-    query_params.pop('sslmode', None)
-    query_params.pop('channel_binding', None)
-
-    # Rebuild query string
-    new_query = urlencode(query_params, doseq=True)
-
-    # Rebuild URL
-    new_parsed = parsed._replace(query=new_query)
-    return urlunparse(new_parsed)
-
-
-database_url = convert_database_url(settings.database_url)
-
+# Create async engine with proper SSL handling for asyncpg
 engine = create_async_engine(
     database_url,
     echo=False,
-    pool_pre_ping=True,
+    future=True,
     connect_args={"ssl": "require"},
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
 )
 
 async_session_maker = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
+    engine, class_=AsyncSession, expire_on_commit=False
 )
 
-
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency that provides a database session."""
     async with async_session_maker() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
-
-
-async def init_db() -> None:
-    """Initialize database tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+        yield session

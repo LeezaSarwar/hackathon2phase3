@@ -6,7 +6,7 @@ import traceback
 
 from app.config import get_settings
 from app.schemas import HealthResponse
-from app.routes import auth, tasks
+from app.routes import auth, tasks, chat
 
 
 settings = get_settings()
@@ -15,7 +15,6 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
-    # Startup
     yield
     # Shutdown
 
@@ -30,7 +29,7 @@ app = FastAPI(
 # Configure CORS - allow all origins for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["https://todoagent.techkl.de","http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
@@ -53,9 +52,10 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Register routers
-app.include_router(auth.router)
-app.include_router(tasks.router)
+# Register routers - Modified to trigger reload
+app.include_router(auth)
+app.include_router(tasks)
+app.include_router(chat)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])

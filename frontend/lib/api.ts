@@ -1,4 +1,5 @@
 import type { Task, TaskCreate, TaskUpdate, ErrorResponse } from "@/types";
+import { getAuthToken } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -24,9 +25,22 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
+function getAuthHeaders(): HeadersInit {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  const token = getAuthToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
 export async function getTasks(userId: string): Promise<Task[]> {
   const response = await fetch(`${API_URL}/api/${userId}/tasks`, {
-    credentials: "include",
+    headers: getAuthHeaders(),
   });
 
   const data = await handleResponse<{ tasks: Task[] }>(response);
@@ -35,7 +49,7 @@ export async function getTasks(userId: string): Promise<Task[]> {
 
 export async function getTask(userId: string, taskId: number): Promise<Task> {
   const response = await fetch(`${API_URL}/api/${userId}/tasks/${taskId}`, {
-    credentials: "include",
+    headers: getAuthHeaders(),
   });
 
   return handleResponse<Task>(response);
@@ -47,10 +61,7 @@ export async function createTask(
 ): Promise<Task> {
   const response = await fetch(`${API_URL}/api/${userId}/tasks`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -64,10 +75,7 @@ export async function updateTask(
 ): Promise<Task> {
   const response = await fetch(`${API_URL}/api/${userId}/tasks/${taskId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -83,10 +91,7 @@ export async function toggleTaskComplete(
     `${API_URL}/api/${userId}/tasks/${taskId}/complete`,
     {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
+      headers: getAuthHeaders(),
       body: JSON.stringify({ completed }),
     }
   );
@@ -100,7 +105,7 @@ export async function deleteTask(
 ): Promise<void> {
   const response = await fetch(`${API_URL}/api/${userId}/tasks/${taskId}`, {
     method: "DELETE",
-    credentials: "include",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -111,4 +116,41 @@ export async function deleteTask(
     }));
     throw new ApiError(error.detail, error.code);
   }
+}
+
+export interface ChatMessage {
+  id?: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string;
+}
+
+export interface ChatHistory {
+  conversation: {
+    id: number;
+    user_id: string;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  messages: ChatMessage[];
+}
+
+export async function getChatHistory(): Promise<ChatHistory> {
+  const response = await fetch(`${API_URL}/api/chat/history`, {
+    headers: getAuthHeaders(),
+  });
+
+  return handleResponse<ChatHistory>(response);
+}
+
+export async function chat(messages: ChatMessage[]): Promise<{ content: string }> {
+  const response = await fetch(`${API_URL}/api/chat`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      messages: messages.map(m => ({ role: m.role, content: m.content }))
+    }),
+  });
+
+  return handleResponse<{ content: string }>(response);
 }

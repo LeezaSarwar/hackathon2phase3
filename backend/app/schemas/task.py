@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from typing import Optional
 
@@ -45,6 +45,11 @@ class TaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_validator('completed', mode='before')
+    @classmethod
+    def validate_completed(cls, v):
+        return v if v is not None else False
 
 
 class TaskListResponse(BaseModel):

@@ -15,13 +15,21 @@ export function useAuth() {
 
   const checkSession = useCallback(async () => {
     try {
-      const user = await getSession();
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Session check timeout")), 10000)
+      );
+
+      const userPromise = getSession();
+      const user = await Promise.race([userPromise, timeoutPromise]);
+
       setState({
-        user,
+        user: user as User,
         isLoading: false,
         isAuthenticated: !!user,
       });
-    } catch {
+    } catch (error) {
+      console.log("Session check failed or timed out:", error);
       setState({
         user: null,
         isLoading: false,
@@ -36,15 +44,20 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     try {
+      // Try to call backend signout
       await authSignOut();
+    } catch (error) {
+      // If backend call fails, just log it - we'll still clear local state
+      console.warn("Backend signout failed:", error);
+    } finally {
+      // Always clear local state and redirect, even if backend call failed
+      // This ensures user can sign out even if backend is down
       setState({
         user: null,
         isLoading: false,
         isAuthenticated: false,
       });
       router.push("/signin");
-    } catch (error) {
-      console.error("Sign out error:", error);
     }
   }, [router]);
 

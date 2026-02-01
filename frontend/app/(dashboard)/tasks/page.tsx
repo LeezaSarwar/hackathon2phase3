@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTasks } from "@/hooks/useTasks";
 import TaskList from "@/components/TaskList";
@@ -20,7 +20,15 @@ export default function TasksPage() {
     updateTask,
     toggleComplete,
     deleteTask,
+    refresh: refreshTasks,
   } = useTasks(user?.id || null);
+
+  // Always fetch fresh tasks when page mounts (e.g., after returning from chatbot)
+  useEffect(() => {
+    if (user?.id) {
+      refreshTasks();
+    }
+  }, [user?.id, refreshTasks]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);

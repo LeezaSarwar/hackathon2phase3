@@ -10,7 +10,7 @@ from sqlmodel import SQLModel
 from alembic import context
 
 # Import models to register them with SQLModel
-from app.models import Task, User
+from app.models import Task, User, Conversation, Message
 from app.config import get_settings
 
 config = context.config
@@ -23,19 +23,21 @@ target_metadata = SQLModel.metadata
 
 def convert_database_url(url: str) -> str:
     """Convert database URL for asyncpg compatibility."""
-    url = url.replace("postgresql://", "postgresql+asyncpg://")
-    url = url.replace("postgres://", "postgresql+asyncpg://")
+    if "postgresql" in url or "postgres" in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://")
+        url = url.replace("postgres://", "postgresql+asyncpg://")
 
-    parsed = urlparse(url)
-    query_params = parse_qs(parsed.query)
+        parsed = urlparse(url)
+        query_params = parse_qs(parsed.query)
 
-    # Remove incompatible parameters
-    query_params.pop('sslmode', None)
-    query_params.pop('channel_binding', None)
+        # Remove incompatible parameters
+        query_params.pop('sslmode', None)
+        query_params.pop('channel_binding', None)
 
-    new_query = urlencode(query_params, doseq=True)
-    new_parsed = parsed._replace(query=new_query)
-    return urlunparse(new_parsed)
+        new_query = urlencode(query_params, doseq=True)
+        new_parsed = parsed._replace(query=new_query)
+        return urlunparse(new_parsed)
+    return url
 
 
 settings = get_settings()
@@ -67,11 +69,15 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
+    connect_args = {}
+    if "postgresql" in database_url:
+        connect_args["ssl"] = "require"
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args={"ssl": "require"},
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:

@@ -31,6 +31,38 @@ export function useTasks(userId: string | null) {
     fetchTasks();
   }, [fetchTasks]);
 
+  // Refresh when window gains focus (e.g., after returning from chatbot)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchTasks();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [fetchTasks]);
+
+  // Refresh when external task modification events occur (e.g., from chatbot)
+  useEffect(() => {
+    const handleTasksChanged = () => {
+      fetchTasks();
+    };
+
+    window.addEventListener("tasks-changed", handleTasksChanged);
+    return () => window.removeEventListener("tasks-changed", handleTasksChanged);
+  }, [fetchTasks]);
+
+  // Also refresh on storage events (cross-tab communication)
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "tasks-updated") {
+        fetchTasks();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [fetchTasks]);
+
   const createTask = useCallback(
     async (data: TaskCreate) => {
       if (!userId) throw new Error("Not authenticated");
